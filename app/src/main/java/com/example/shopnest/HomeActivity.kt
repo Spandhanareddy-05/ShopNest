@@ -13,7 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.shopnest.ui.theme.ShopNestTheme
 import com.example.shopnest.data.Product
-import com.example.shopnest.ui.theme.ProductCard
+import kotlinx.coroutines.launch
+
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,48 +27,76 @@ class HomeActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
     var selectedTab by remember { mutableStateOf(0) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Cart") },
-                    label = { Text("Cart") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") }
-                )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Menu", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(16.dp))
+                Divider()
+                NavigationDrawerItem(label = { Text("Profile") }, selected = false, onClick = { /* TODO */ })
+                NavigationDrawerItem(label = { Text("Settings") }, selected = false, onClick = { /* TODO */ })
+                NavigationDrawerItem(label = { Text("Privacy Policy") }, selected = false, onClick = { /* TODO */ })
+                NavigationDrawerItem(label = { Text("About") }, selected = false, onClick = { /* TODO */ })
             }
         }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            when (selectedTab) {
-                0 -> HomeContent()
-                1 -> CartContent()
-                2 -> ProfileContent()
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("ShopNest") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                        label = { Text("Home") }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Cart") },
+                        label = { Text("Cart") }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        icon = { Icon(Icons.Default.Payments, contentDescription = "Payments") },
+                        label = { Text("Payments") }
+                    )
+                }
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                when (selectedTab) {
+                    0 -> HomeContent()
+                    1 -> CartContent()
+                    2 -> PaymentsContent()
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun HomeContent() {
@@ -168,6 +197,27 @@ fun DealCard(title: String, subtitle: String) {
 }
 
 @Composable
+fun ProductCard(product: Product) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(90.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(product.name, style = MaterialTheme.typography.bodyLarge)
+            Text(product.description, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+
+@Composable
 fun CartContent() {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -180,16 +230,17 @@ fun CartContent() {
 }
 
 @Composable
-fun ProfileContent() {
+fun PaymentsContent() {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text("User Profile", style = MaterialTheme.typography.headlineSmall)
+        Text("Payment Methods", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Name: Jane Doe")
-        Text("Email: jane@example.com")
-        Spacer(modifier = Modifier.height(12.dp))
-        Text("Order History, Preferences, and Settings coming soon.")
+        Text("• UPI - linked", style = MaterialTheme.typography.bodyLarge)
+        Text("• Debit/Credit Card - not added", style = MaterialTheme.typography.bodyLarge)
+        Text("• COD - Available", style = MaterialTheme.typography.bodyLarge)
     }
 }
+
