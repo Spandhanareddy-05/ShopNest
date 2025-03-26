@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.shopnest.ui.theme.ShopNestTheme
+import com.example.shopnest.data.Product
+import com.example.shopnest.ui.theme.ProductCard
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,26 +71,53 @@ fun HomeScreen() {
 
 @Composable
 fun HomeContent() {
+    val allProducts = listOf(
+        Product("Red Matte Lipstick", "Makeup", "Flat 30% off - Bestseller"),
+        Product("Organic Skincare Combo", "Skincare", "Buy 1 Get 1 Free"),
+        Product("Hydrating Face Cream", "Skincare", "Best for dry skin"),
+        Product("Floral Summer Dress", "Clothing", "Trending now"),
+        Product("Eyeliner Pen", "Makeup", "Smudge-proof & long-lasting"),
+        Product("Denim Jacket", "Clothing", "Casual & stylish"),
+        Product("Body Lotion", "Skincare", "Deep hydration formula"),
+    )
+
+    var selectedCategory by remember { mutableStateOf("All") }
+
+    val filteredProducts = if (selectedCategory == "All") {
+        allProducts
+    } else {
+        allProducts.filter { it.category == selectedCategory }
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize()
     ) {
         Text("Welcome to ShopNest!", style = MaterialTheme.typography.headlineMedium)
 
-        Text("Explore Categories", style = MaterialTheme.typography.titleMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            CategoryCard("Skincare", Modifier.weight(1f))
-            CategoryCard("Makeup", Modifier.weight(1f))
-            CategoryCard("Clothing", Modifier.weight(1f))
+        // Category filter chips
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            listOf("All", "Skincare", "Makeup", "Clothing").forEach { category ->
+                FilterChip(
+                    selected = selectedCategory == category,
+                    onClick = { selectedCategory = category },
+                    label = { Text(category) }
+                )
+            }
         }
 
         Divider()
 
-        Text("Top Picks for You", style = MaterialTheme.typography.titleMedium)
+        Text("Products", style = MaterialTheme.typography.titleMedium)
+
+        // Product list
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            DealCard("Red Matte Lipstick", "Flat 30% off - Bestseller")
-            DealCard("Organic Skincare Combo", "Buy 1 Get 1 Free")
-            DealCard("Floral Dress", "Trending now")
+            filteredProducts.forEach { product ->
+                ProductCard(product)
+            }
         }
 
         Divider()
@@ -100,6 +129,7 @@ fun HomeContent() {
         )
     }
 }
+
 
 @Composable
 fun CategoryCard(name: String, modifier: Modifier = Modifier) {
