@@ -33,6 +33,25 @@ fun HomeScreen() {
     var selectedTab by remember { mutableStateOf(0) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+
+    // Show Privacy Policy Dialog
+    if (showPrivacyPolicyDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyPolicyDialog = false },
+            title = { Text("Privacy Policy") },
+            text = {
+                Text(
+                    "ShopNest respects your privacy. We collect data to enhance your experience, but never sell or misuse it. By using the app, you agree to our use of essential cookies and secure processing of your personal data as per GDPR compliance."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showPrivacyPolicyDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -42,7 +61,14 @@ fun HomeScreen() {
                 Divider()
                 NavigationDrawerItem(label = { Text("Profile") }, selected = false, onClick = { /* TODO */ })
                 NavigationDrawerItem(label = { Text("Settings") }, selected = false, onClick = { /* TODO */ })
-                NavigationDrawerItem(label = { Text("Privacy Policy") }, selected = false, onClick = { /* TODO */ })
+                NavigationDrawerItem(
+                    label = { Text("Privacy Policy") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showPrivacyPolicyDialog = true
+                    }
+                )
                 NavigationDrawerItem(label = { Text("About") }, selected = false, onClick = { /* TODO */ })
             }
         }
@@ -96,6 +122,7 @@ fun HomeScreen() {
         }
     }
 }
+
 
 
 @Composable
