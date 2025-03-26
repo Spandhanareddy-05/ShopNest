@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.shopnest.ui.theme.ShopNestTheme
 import androidx.compose.ui.layout.ContentScale
 
+import com.example.shopnest.utils.GDPRPrefs
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,14 +46,41 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginScreen() {
     val context = LocalContext.current
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    // GDPR state management
+    var showGDPRDialog by remember { mutableStateOf(!GDPRPrefs.hasAgreed(context)) }
+
+    // GDPR Consent Dialog
+    if (showGDPRDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {
+                TextButton(onClick = {
+                    GDPRPrefs.setAgreed(context)
+                    showGDPRDialog = false
+                }) {
+                    Text("I Agree")
+                }
+            },
+            title = { Text("Privacy & Data Consent") },
+            text = {
+                Text(
+                    "By using ShopNest, you agree to our Privacy Policy and Terms of Use. " +
+                            "We collect and process your personal data in accordance with GDPR for improving your shopping experience."
+                )
+            }
+        )
+    }
+
+    // UI as-is...
     Box(modifier = Modifier.fillMaxSize()) {
-        //  Background Image
+        // Background and overlay
         Image(
-            painter = painterResource(id = R.drawable.backround1), // Replace with your image name
+            painter = painterResource(id = R.drawable.backround1),
             contentDescription = "Background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -61,21 +89,16 @@ fun LoginScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)) // 50% dark overlay
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
         )
 
-        // 🔹 Login Form on top of background
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(32.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Welcome Back",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+            Text("Welcome Back", style = MaterialTheme.typography.headlineMedium)
 
             OutlinedTextField(
                 value = email,
@@ -120,17 +143,16 @@ fun LoginScreen() {
 
             Button(
                 onClick = {
-                    // For now, skip validation and go straight to HomeActivity
                     Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                     context.startActivity(Intent(context, HomeActivity::class.java))
                 },
+                enabled = !showGDPRDialog,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
                 Text("Login")
             }
-
 
             Spacer(modifier = Modifier.height(16.dp))
 
