@@ -5,9 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,40 +26,39 @@ class HomeActivity : ComponentActivity() {
 
 @Composable
 fun HomeScreen() {
-    var selectedItem by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = selectedItem == 0,
-                    onClick = { selectedItem = 0 },
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home") }
                 )
                 NavigationBarItem(
-                    selected = selectedItem == 1,
-                    onClick = { selectedItem = 1 },
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
                     icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Cart") },
                     label = { Text("Cart") }
                 )
                 NavigationBarItem(
-                    selected = selectedItem == 2,
-                    onClick = { selectedItem = 2 },
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     label = { Text("Profile") }
                 )
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
+                .padding(padding)
+                .padding(16.dp)
         ) {
-            when (selectedItem) {
+            when (selectedTab) {
                 0 -> HomeContent()
                 1 -> CartContent()
                 2 -> ProfileContent()
@@ -73,65 +70,50 @@ fun HomeScreen() {
 @Composable
 fun HomeContent() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = "Welcome to ShopNest!",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Text("Welcome to ShopNest!", style = MaterialTheme.typography.headlineMedium)
 
-        Divider()
-
-        Text(
-            text = "Featured Categories",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            CategoryCard("Electronics")
-            CategoryCard("Fashion")
-            CategoryCard("Groceries")
+        Text("Explore Categories", style = MaterialTheme.typography.titleMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            CategoryCard("Skincare", Modifier.weight(1f))
+            CategoryCard("Makeup", Modifier.weight(1f))
+            CategoryCard("Clothing", Modifier.weight(1f))
         }
 
         Divider()
 
-        Text(
-            text = "Trending Deals",
-            style = MaterialTheme.typography.titleMedium
-        )
-
+        Text("Top Picks for You", style = MaterialTheme.typography.titleMedium)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            DealCard("50% Off on Headphones", "Limited time offer")
-            DealCard("Buy 1 Get 1 Free - T-Shirts", "Only today!")
-            DealCard("Fresh Fruits 30% Off", "Shop now")
+            DealCard("Red Matte Lipstick", "Flat 30% off - Bestseller")
+            DealCard("Organic Skincare Combo", "Buy 1 Get 1 Free")
+            DealCard("Floral Dress", "Trending now")
         }
+
+        Divider()
+
+        Text("Why ShopNest?", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "✓ Curated beauty & fashion just for you\n✓ Affordable luxury\n✓ Fast delivery & easy returns",
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
 @Composable
 fun CategoryCard(name: String, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier
-            .height(100.dp),
+        modifier = modifier.height(100.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Text(text = name, style = MaterialTheme.typography.bodyMedium)
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(text = name, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
-
 
 @Composable
 fun DealCard(title: String, subtitle: String) {
@@ -144,10 +126,10 @@ fun DealCard(title: String, subtitle: String) {
         )
     ) {
         Column(
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.Center
+                .padding(12.dp)
         ) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
@@ -155,19 +137,29 @@ fun DealCard(title: String, subtitle: String) {
     }
 }
 
-
 @Composable
 fun CartContent() {
-    Text(
-        text = "Your cart is empty.",
-        style = MaterialTheme.typography.headlineSmall
-    )
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Your cart is currently empty.", style = MaterialTheme.typography.bodyLarge)
+        Text("Start adding your favorite beauty and fashion picks!")
+    }
 }
 
 @Composable
 fun ProfileContent() {
-    Text(
-        text = "User Profile",
-        style = MaterialTheme.typography.headlineSmall
-    )
+    Column(
+        modifier = Modifier.fillMaxSize().padding(top = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("User Profile", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Name: Jane Doe")
+        Text("Email: jane@example.com")
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("Order History, Preferences, and Settings coming soon.")
+    }
 }
