@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.example.shopnest.ui.theme.ShopNestTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
+import com.google.firebase.auth.FirebaseAuth
 
 class SignupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,26 +44,28 @@ class SignupActivity : ComponentActivity() {
 @Composable
 fun SignupScreen() {
     val context = LocalContext.current
+    val auth = remember { FirebaseAuth.getInstance() }
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Optional background image
+        // Background
         Image(
-            painter = painterResource(id = R.drawable.backround1), // Replace with your background
+            painter = painterResource(id = R.drawable.backround1),
             contentDescription = "Background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
-        // Optional overlay to reduce contrast
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
         )
 
         Column(
@@ -71,12 +74,9 @@ fun SignupScreen() {
                 .padding(32.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Create Account",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+            Text("Create Account", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimary)
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = fullName,
@@ -141,30 +141,39 @@ fun SignupScreen() {
                             Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                         }
                         else -> {
-                            Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
-                            // Navigate to login or home screen
+                            isLoading = true
+                            auth.createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    isLoading = false
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(context, "Account Created", Toast.LENGTH_SHORT).show()
+                                        // Navigate to login
+                                        (context as? ComponentActivity)?.finish()
+                                    } else {
+                                        Toast.makeText(context, "Signup failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
                         }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                enabled = !isLoading
             ) {
-                Text("Sign Up")
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                else Text("Sign Up")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
+            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Text(text = "Already have an account?", color = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "Login",
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable {
-                        // Navigate back to LoginActivity
                         (context as? ComponentActivity)?.finish()
                     }
                 )
