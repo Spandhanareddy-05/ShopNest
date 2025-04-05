@@ -46,15 +46,16 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginScreen() {
     val context = LocalContext.current
+    val auth = remember { com.google.firebase.auth.FirebaseAuth.getInstance() }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    // GDPR state management
+    // GDPR state
     var showGDPRDialog by remember { mutableStateOf(!GDPRPrefs.hasAgreed(context)) }
 
-    // GDPR Consent Dialog
     if (showGDPRDialog) {
         AlertDialog(
             onDismissRequest = {},
@@ -76,9 +77,8 @@ fun LoginScreen() {
         )
     }
 
-    // UI as-is...
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background and overlay
+        // Background
         Image(
             painter = painterResource(id = R.drawable.backround1),
             contentDescription = "Background",
@@ -86,6 +86,7 @@ fun LoginScreen() {
             contentScale = ContentScale.Crop
         )
 
+        // Overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -143,15 +144,25 @@ fun LoginScreen() {
 
             Button(
                 onClick = {
-                    Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
-                    context.startActivity(Intent(context, HomeActivity::class.java))
+                    isLoading = true
+                    auth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            isLoading = false
+                            if (task.isSuccessful) {
+                                Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                                context.startActivity(Intent(context, HomeActivity::class.java))
+                            } else {
+                                Toast.makeText(context, "Authentication Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
                 },
-                enabled = !showGDPRDialog,
+                enabled = !showGDPRDialog && !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Login")
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                else Text("Login")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -172,6 +183,7 @@ fun LoginScreen() {
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
