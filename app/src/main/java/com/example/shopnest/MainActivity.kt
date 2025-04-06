@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 
                     // Navigate to LoginActivity after splash
                     startActivity(Intent(this@MainActivity, LoginActivity::class.java))
-                    finish() // Optional: Close MainActivity so it doesn't stay in back stack
+                    finish() // Remove Splash from backstack
                 }
 
                 if (showSplash) {
@@ -46,22 +46,21 @@ fun SplashScreen() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Background image
+        // Background
         Image(
-            painter = painterResource(id = R.drawable.backround1), // Replace with your image name
-            contentDescription = "Background Image",
+            painter = painterResource(id = R.drawable.backround1), // Replace with your background image
+            contentDescription = "Splash Background",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
 
-        // Logo on top
+        // App logo
         Image(
-            painter = painterResource(id = R.drawable.shopnest),
-            contentDescription = "App Logo",
+            painter = painterResource(id = R.drawable.shopnest), // Replace with your app logo
+            contentDescription = "ShopNest Logo",
             modifier = Modifier
-                .size(500.dp)
+                .size(280.dp)
                 .align(Alignment.Center)
         )
     }
 }
-
