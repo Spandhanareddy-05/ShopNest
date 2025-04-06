@@ -3,6 +3,7 @@ package com.example.shopnest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.shopnest.ui.theme.ShopNestTheme
 import com.example.shopnest.data.Product
@@ -128,14 +130,16 @@ fun HomeScreen() {
 @Composable
 fun HomeContent() {
     val allProducts = listOf(
-        Product("Red Matte Lipstick", "Makeup", "Flat 30% off - Bestseller"),
-        Product("Organic Skincare Combo", "Skincare", "Buy 1 Get 1 Free"),
-        Product("Hydrating Face Cream", "Skincare", "Best for dry skin"),
-        Product("Floral Summer Dress", "Clothing", "Trending now"),
-        Product("Eyeliner Pen", "Makeup", "Smudge-proof & long-lasting"),
-        Product("Denim Jacket", "Clothing", "Casual & stylish"),
-        Product("Body Lotion", "Skincare", "Deep hydration formula"),
+        Product("Red Matte Lipstick", "Makeup", "Flat 30% off - Bestseller", R.drawable.lipstick),
+        Product("Organic Skincare Combo", "Skincare", "Buy 1 Get 1 Free", R.drawable.skincare_combo),
+        Product("Hydrating Face Cream", "Skincare", "Best for dry skin", R.drawable.face_cream),
+        Product("Floral Summer Dress", "Clothing", "Trending now", R.drawable.floral_dress),
+        Product("Eyeliner Pen", "Makeup", "Smudge-proof & long-lasting", R.drawable.eyeliner),
+        Product("Denim Jacket", "Clothing", "Casual & stylish", R.drawable.denim_jacket),
+        Product("Body Lotion", "Skincare", "Deep hydration formula", R.drawable.body_lotion),
     )
+
+
 
     var selectedCategory by remember { mutableStateOf("All") }
 
@@ -228,20 +232,36 @@ fun ProductCard(product: Product) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp),
+            .height(120.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp),
-            verticalArrangement = Arrangement.Center
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(product.name, style = MaterialTheme.typography.bodyLarge)
-            Text(product.description, style = MaterialTheme.typography.bodySmall)
+            Image(
+                painter = painterResource(id = product.imageResId),
+                contentDescription = product.name,
+                modifier = Modifier
+                    .size(80.dp)
+                    .aspectRatio(1f)
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                Text(product.name, style = MaterialTheme.typography.bodyLarge)
+                Text(product.description, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
+
 
 
 @Composable
