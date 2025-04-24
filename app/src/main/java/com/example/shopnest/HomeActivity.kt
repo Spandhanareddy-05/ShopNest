@@ -2,6 +2,7 @@ package com.example.shopnest
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -74,6 +75,7 @@ fun HomeScreen() {
         )
     }
 
+    // ✅ Wrap everything inside ModalNavigationDrawer
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -84,6 +86,14 @@ fun HomeScreen() {
                 NavigationDrawerItem(label = { Text("Privacy Policy") }, selected = false, onClick = {
                     scope.launch { drawerState.close() }
                     showPrivacyPolicyDialog = true
+                })
+                NavigationDrawerItem(label = { Text("Sign Out") }, selected = false, onClick = {
+                    scope.launch { drawerState.close() }
+                    Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
+                    context.startActivity(Intent(context, LoginActivity::class.java))
+                    if (context is ComponentActivity) {
+                        context.finish()
+                    }
                 })
             }
         }
@@ -114,7 +124,7 @@ fun HomeScreen() {
                         label = { Text("Cart") }
                     )
                     NavigationBarItem(
-                        selected = false, // since we reset it
+                        selected = false,
                         onClick = { selectedTab = 2 },
                         icon = { Icon(Icons.Default.Payments, contentDescription = "Payments") },
                         label = { Text("Payments") }
@@ -143,13 +153,13 @@ fun HomeScreen() {
                                 putExtra("totalPrice", total)
                             }
                         )
-
                     }
                 }
             }
         }
     }
 }
+
 
 
 
