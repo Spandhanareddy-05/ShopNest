@@ -130,15 +130,7 @@ fun LoginScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Forgot Password?",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable {
-                        Toast.makeText(context, "Password recovery not implemented", Toast.LENGTH_SHORT).show()
-                    }
-            )
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
