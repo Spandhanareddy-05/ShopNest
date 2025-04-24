@@ -12,18 +12,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.shopnest.data.OrderSummary
 import com.example.shopnest.data.Product
 import com.example.shopnest.ui.theme.ShopNestTheme
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.material3.HorizontalDivider
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.UUID
 
 data class CartItem(val product: Product, val quantity: MutableState<Int>)
 
@@ -44,10 +49,17 @@ fun HomeScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val cartItems = remember { mutableStateListOf<CartItem>() }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
 
-    val cartItems = remember { mutableStateListOf<CartItem>() }
-    val context = LocalContext.current
+    if (selectedTab == 2) {
+        // Trigger PaymentActivity and reset tab
+        LaunchedEffect(Unit) {
+            selectedTab = 0
+            context.startActivity(Intent(context, PaymentActivity::class.java))
+        }
+    }
 
     if (showPrivacyPolicyDialog) {
         AlertDialog(
@@ -102,7 +114,7 @@ fun HomeScreen() {
                         label = { Text("Cart") }
                     )
                     NavigationBarItem(
-                        selected = selectedTab == 2,
+                        selected = false, // since we reset it
                         onClick = { selectedTab = 2 },
                         icon = { Icon(Icons.Default.Payments, contentDescription = "Payments") },
                         label = { Text("Payments") }
@@ -119,14 +131,28 @@ fun HomeScreen() {
                 when (selectedTab) {
                     0 -> HomeContent(cartItems)
                     1 -> CartContent(cartItems) {
-                        context.startActivity(Intent(context, PaymentActivity::class.java))
+                        context.startActivity(
+                            Intent(context, PaymentActivity::class.java).apply {
+                                putStringArrayListExtra(
+                                    "cartItems",
+                                    ArrayList(cartItems.map { "${it.product.name} - £${"%.2f".format(it.product.price)} x ${it.quantity.value}" })
+                                )
+                                val subtotal = cartItems.sumOf { it.product.price * it.quantity.value }
+                                val tax = subtotal * 0.1
+                                val total = subtotal + tax
+                                putExtra("totalPrice", total)
+                            }
+                        )
+
                     }
-                    2 -> PaymentsContent()
                 }
             }
         }
     }
 }
+
+
+
 
 @Composable
 fun HomeContent(cartItems: SnapshotStateList<CartItem>) {
@@ -237,6 +263,10 @@ fun AddToCartBottomSheet(product: Product, onAdd: (Product) -> Unit, onDismiss: 
 
 @Composable
 fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) {
+    val context = LocalContext.current
+    var orderHistory by remember { mutableStateOf(listOf<OrderSummary>()) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
+
     val subtotal by remember {
         derivedStateOf {
             cartItems.sumOf { it.product.price * it.quantity.value }
@@ -261,11 +291,37 @@ fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) 
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = onPayClick,
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Go to Payment")
+                        Button(
+                            onClick = {
+                                showHistoryDialog = true
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Order History")
+                        }
+                        Button(
+                            onClick = {
+                                // Save to order history before navigating
+                                val orderId = UUID.randomUUID().toString().substring(0, 8).uppercase()
+                                val date = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                                    .format(Calendar.getInstance().time)
+                                val items = cartItems.map {
+                                    "${it.product.name} x ${it.quantity.value}"
+                                }
+                                orderHistory = orderHistory + OrderSummary(orderId, date, total, items)
+
+                                onPayClick()
+                                cartItems.clear()
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = cartItems.isNotEmpty()
+                        ) {
+                            Text("Go to Payment")
+                        }
                     }
                 }
             }
@@ -295,7 +351,6 @@ fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) 
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-
                         Row {
                             IconButton(onClick = {
                                 if (item.quantity.value > 1) {
@@ -306,12 +361,8 @@ fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) 
                             }) {
                                 Icon(Icons.Default.Remove, contentDescription = "Decrease Quantity")
                             }
-
                             Text("${item.quantity.value}", style = MaterialTheme.typography.bodyLarge)
-
-                            IconButton(onClick = {
-                                item.quantity.value++
-                            }) {
+                            IconButton(onClick = { item.quantity.value++ }) {
                                 Icon(Icons.Default.Add, contentDescription = "Increase Quantity")
                             }
                         }
@@ -320,19 +371,36 @@ fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) 
             }
         }
     }
-}
 
-@Composable
-fun PaymentsContent() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Payment Methods", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("• UPI - linked")
-        Text("• Debit/Credit Card - not added")
-        Text("• COD - Available")
+    if (showHistoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showHistoryDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showHistoryDialog = false }) {
+                    Text("Close")
+                }
+            },
+            title = { Text("Order History") },
+            text = {
+                if (orderHistory.isEmpty()) {
+                    Text("No previous orders yet.")
+                } else {
+                    Column {
+                        orderHistory.reversed().forEach { order ->
+                            Text("Order ID: ${order.id}", style = MaterialTheme.typography.labelLarge)
+                            Text("Date: ${order.date}")
+                            Text("Total: £${"%.2f".format(order.total)}")
+                            order.items.forEach {
+                                Text("• $it", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                    }
+                }
+            }
+        )
     }
 }
+
+
+
