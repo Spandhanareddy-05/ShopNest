@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.shopnest.data.OrderSummary
 import com.example.shopnest.data.Product
 import com.example.shopnest.ui.theme.ShopNestTheme
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -75,28 +76,78 @@ fun HomeScreen() {
         )
     }
 
-    // ✅ Wrap everything inside ModalNavigationDrawer
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: "Not logged in"
+
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = { Text("Profile") },
+            confirmButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text("Close")
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = "Name", modifier = Modifier.padding(end = 8.dp))
+                        Text("Name: Spandana Reddy")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Phone, contentDescription = "Phone", modifier = Modifier.padding(end = 8.dp))
+                        Text("Phone: +44 7359190971")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Email, contentDescription = "Email", modifier = Modifier.padding(end = 8.dp))
+                        Text("Email: $userEmail")
+                    }
+                }
+            }
+        )
+    }
+
+
+    // Wrap everything inside ModalNavigationDrawer
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
                 Text("Menu", modifier = Modifier.padding(16.dp))
-                NavigationDrawerItem(label = { Text("Profile") }, selected = false, onClick = {})
-                NavigationDrawerItem(label = { Text("Settings") }, selected = false, onClick = {})
+
+                // Profile section
+                NavigationDrawerItem(label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Person, contentDescription = "User", modifier = Modifier.padding(end = 8.dp))
+                        Text("Profile")
+                    }
+                }, selected = false, onClick = {
+                    scope.launch { drawerState.close() }
+                    showProfileDialog = true
+                })
+
+                // Removed Settings
                 NavigationDrawerItem(label = { Text("Privacy Policy") }, selected = false, onClick = {
                     scope.launch { drawerState.close() }
                     showPrivacyPolicyDialog = true
                 })
-                NavigationDrawerItem(label = { Text("Sign Out") }, selected = false, onClick = {
+
+                // Sign out
+                NavigationDrawerItem(label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Logout, contentDescription = "Logout", modifier = Modifier.padding(end = 8.dp))
+                        Text("Sign Out")
+                    }
+                }, selected = false, onClick = {
                     scope.launch { drawerState.close() }
                     Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
                     context.startActivity(Intent(context, LoginActivity::class.java))
-                    if (context is ComponentActivity) {
-                        context.finish()
-                    }
+                    if (context is ComponentActivity) context.finish()
                 })
             }
         }
+
     ) {
         Scaffold(
             topBar = {
