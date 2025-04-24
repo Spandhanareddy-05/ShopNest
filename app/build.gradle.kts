@@ -64,10 +64,13 @@ dependencies {
     // For text fields and keyboard support
     implementation(libs.androidx.ui.text)
 
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.firestore.ktx)
 
     // Testing
     testImplementation(libs.junit)
@@ -78,4 +81,8 @@ dependencies {
     // Debug tooling
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation (libs.firebase.storage.ktx)
+
+
 }

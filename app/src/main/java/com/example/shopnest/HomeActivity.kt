@@ -31,6 +31,22 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
+import android.Manifest
+
+import android.graphics.Bitmap
+import com.google.firebase.storage.FirebaseStorage
+import java.io.ByteArrayOutputStream
+import androidx.compose.material.icons.filled.CloudUpload
+
+
+
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 data class CartItem(val product: Product, val quantity: MutableState<Int>)
 
@@ -54,9 +70,9 @@ fun HomeScreen() {
     val context = LocalContext.current
     val cartItems = remember { mutableStateListOf<CartItem>() }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+    var showProfileDialog by remember { mutableStateOf(false) }
 
     if (selectedTab == 2) {
-        // Trigger PaymentActivity and reset tab
         LaunchedEffect(Unit) {
             selectedTab = 0
             context.startActivity(Intent(context, PaymentActivity::class.java))
@@ -76,11 +92,8 @@ fun HomeScreen() {
         )
     }
 
-    var showProfileDialog by remember { mutableStateOf(false) }
-
     if (showProfileDialog) {
         val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: "Not logged in"
-
         AlertDialog(
             onDismissRequest = { showProfileDialog = false },
             title = { Text("Profile") },
@@ -108,46 +121,71 @@ fun HomeScreen() {
         )
     }
 
+    // Camera feature
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Wrap everything inside ModalNavigationDrawer
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        bitmap?.let {
+            imageBitmap = it
+            Toast.makeText(context, "Image captured successfully!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(context, "Camera permission is required", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
                 Text("Menu", modifier = Modifier.padding(16.dp))
-
-                // Profile section
-                NavigationDrawerItem(label = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = "User", modifier = Modifier.padding(end = 8.dp))
-                        Text("Profile")
+                NavigationDrawerItem(
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, contentDescription = "User", modifier = Modifier.padding(end = 8.dp))
+                            Text("Profile")
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showProfileDialog = true
                     }
-                }, selected = false, onClick = {
-                    scope.launch { drawerState.close() }
-                    showProfileDialog = true
-                })
-
-                // Removed Settings
-                NavigationDrawerItem(label = { Text("Privacy Policy") }, selected = false, onClick = {
-                    scope.launch { drawerState.close() }
-                    showPrivacyPolicyDialog = true
-                })
-
-                // Sign out
-                NavigationDrawerItem(label = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Logout, contentDescription = "Logout", modifier = Modifier.padding(end = 8.dp))
-                        Text("Sign Out")
+                )
+                NavigationDrawerItem(
+                    label = { Text("Privacy Policy") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showPrivacyPolicyDialog = true
                     }
-                }, selected = false, onClick = {
-                    scope.launch { drawerState.close() }
-                    Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
-                    context.startActivity(Intent(context, LoginActivity::class.java))
-                    if (context is ComponentActivity) context.finish()
-                })
+                )
+                NavigationDrawerItem(
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout", modifier = Modifier.padding(end = 8.dp))
+                            Text("Sign Out")
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
+                        context.startActivity(Intent(context, LoginActivity::class.java))
+                        if (context is ComponentActivity) context.finish()
+                    }
+                )
             }
         }
-
     ) {
         Scaffold(
             topBar = {
@@ -156,6 +194,20 @@ fun HomeScreen() {
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            val permissionCheck = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.CAMERA
+                            )
+                            if (permissionCheck == PermissionChecker.PERMISSION_GRANTED) {
+                                cameraLauncher.launch(null)
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = "Open Camera")
                         }
                     }
                 )
@@ -175,7 +227,7 @@ fun HomeScreen() {
                         label = { Text("Cart") }
                     )
                     NavigationBarItem(
-                        selected = false,
+                        selected = selectedTab == 2,
                         onClick = { selectedTab = 2 },
                         icon = { Icon(Icons.Default.Payments, contentDescription = "Payments") },
                         label = { Text("Payments") }
@@ -196,7 +248,9 @@ fun HomeScreen() {
                             Intent(context, PaymentActivity::class.java).apply {
                                 putStringArrayListExtra(
                                     "cartItems",
-                                    ArrayList(cartItems.map { "${it.product.name} - £${"%.2f".format(it.product.price)} x ${it.quantity.value}" })
+                                    ArrayList(cartItems.map {
+                                        "${it.product.name} - £${"%.2f".format(it.product.price)} x ${it.quantity.value}"
+                                    })
                                 )
                                 val subtotal = cartItems.sumOf { it.product.price * it.quantity.value }
                                 val tax = subtotal * 0.1
@@ -210,6 +264,9 @@ fun HomeScreen() {
         }
     }
 }
+
+
+
 
 
 
@@ -321,6 +378,8 @@ fun AddToCartBottomSheet(product: Product, onAdd: (Product) -> Unit, onDismiss: 
         }
     )
 }
+
+
 
 @Composable
 fun CartContent(cartItems: SnapshotStateList<CartItem>, onPayClick: () -> Unit) {
